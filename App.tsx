@@ -63,7 +63,19 @@ function AppContent() {
               lastLogin: serverTimestamp()
             });
           } else {
-            await setDoc(userDocRef, { lastLogin: serverTimestamp() }, { merge: true });
+            const data = userDoc.data();
+            const isAdmin = firebaseUser.email === 'ahdanhqq1@gmail.com';
+            
+            // Ensure admin email always has admin role and approval
+            if (isAdmin && (data?.role !== 'admin' || data?.isApproved !== true)) {
+              await setDoc(userDocRef, { 
+                role: 'admin', 
+                isApproved: true,
+                lastLogin: serverTimestamp() 
+              }, { merge: true });
+            } else {
+              await setDoc(userDocRef, { lastLogin: serverTimestamp() }, { merge: true });
+            }
           }
 
           // Listen for real-time profile updates (approval status)
@@ -110,7 +122,7 @@ function AppContent() {
     return <Login />;
   }
 
-  if (userProfile && !userProfile.isApproved) {
+  if (userProfile && !userProfile.isApproved && userProfile.role !== 'admin') {
     return <PendingApproval />;
   }
 
