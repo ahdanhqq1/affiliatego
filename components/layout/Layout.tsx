@@ -9,9 +9,10 @@ interface LayoutProps {
   children: React.ReactNode;
   activeView: View;
   setActiveView: (view: View) => void;
+  userProfile: any;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveView }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveView, userProfile }) => {
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
@@ -35,6 +36,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveV
           setActiveView={setActiveView}
           isMobileOpen={isMobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}
+          userProfile={userProfile}
         />
         
         <main className="flex-1 min-w-0 pb-12 animate-fade-in">

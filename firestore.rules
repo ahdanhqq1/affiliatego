@@ -17,10 +17,16 @@ service cloud.firestore {
           (request.auth.token.email == "ahdanhqq1@gmail.com" && request.auth.token.email_verified == true));
     }
 
+    function isApproved() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApproved == true || isAdmin());
+    }
+
     // User profiles
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAdmin() || (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isApproved']));
     }
 
     // Default deny

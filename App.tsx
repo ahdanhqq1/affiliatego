@@ -7,7 +7,7 @@ import { Layout } from './components/layout/Layout';
 import { SettingsModal } from './components/SettingsModal';
 import { Login } from './components/Login';
 import { auth, onAuthStateChanged, User, db } from './firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, onSnapshot, getDoc } from 'firebase/firestore';
 import { VirtualTryOn } from './pages/VirtualTryOn';
 import HomePage from './pages/HomePage';
 import GoAesthetic from './pages/GoAesthetic';
@@ -19,36 +19,77 @@ import GoClean from './pages/GoClean';
 import { GoSelfieVip } from './pages/GoSelfieVip';
 import { GoSetup } from './pages/GoSetup';
 import { FeatureGuide } from './pages/FeatureGuide';
+import { PendingApproval } from './components/PendingApproval';
+import { AdminPanel } from './pages/AdminPanel';
 
-export type View = 'home' | 'featureGuide' | 'virtualTryOn' | 'goAesthetic' | 'goKids' | 'goFamily' | 'goModelVip' | 'goCermin' | 'goClean' | 'goSelfieVip' | 'goSetup';
+export type View = 'home' | 'featureGuide' | 'virtualTryOn' | 'goAesthetic' | 'goKids' | 'goFamily' | 'goModelVip' | 'goCermin' | 'goClean' | 'goSelfieVip' | 'goSetup' | 'adminPanel';
+
+interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string | null;
+  photoURL: string | null;
+  role: 'admin' | 'user';
+  isApproved: boolean;
+}
 
 function AppContent() {
   const { t } = useLanguage();
   const [activeView, setActiveView] = useState<View>('home');
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // Save user profile to Firestore
+    let unsubscribeProfile: (() => void) | undefined;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        
+        // Initial setup for new user
         try {
-          await setDoc(doc(db, 'users', user.uid), {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            lastLogin: serverTimestamp(),
-            createdAt: serverTimestamp()
-          }, { merge: true });
+          const userDoc = await getDoc(userDocRef);
+          if (!userDoc.exists()) {
+            const isAdmin = firebaseUser.email === 'ahdanhqq1@gmail.com';
+            await setDoc(userDocRef, {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              role: isAdmin ? 'admin' : 'user',
+              isApproved: isAdmin ? true : false,
+              createdAt: serverTimestamp(),
+              lastLogin: serverTimestamp()
+            });
+          } else {
+            await setDoc(userDocRef, { lastLogin: serverTimestamp() }, { merge: true });
+          }
+
+          // Listen for real-time profile updates (approval status)
+          unsubscribeProfile = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+              setUserProfile(doc.data() as UserProfile);
+            }
+          });
         } catch (error) {
-          console.error('Error saving user profile:', error);
+          console.error('Error handling user profile:', error);
         }
+
+        setUser(firebaseUser);
+        setLoading(false);
+      } else {
+        if (unsubscribeProfile) unsubscribeProfile();
+        setUser(null);
+        setUserProfile(null);
+        setLoading(false);
       }
-      setUser(user);
-      setLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
   }, []);
 
   const handleNavigate = (view: View) => {
@@ -69,6 +110,10 @@ function AppContent() {
     return <Login />;
   }
 
+  if (userProfile && !userProfile.isApproved) {
+    return <PendingApproval />;
+  }
+
   const renderActiveView = () => {
       switch (activeView) {
         case 'home': return <HomePage />;
@@ -82,12 +127,13 @@ function AppContent() {
         case 'goClean': return <GoClean />;
         case 'goSelfieVip': return <GoSelfieVip />;
         case 'goSetup': return <GoSetup />;
+        case 'adminPanel': return <AdminPanel />;
         default: return <HomePage />;
       }
   };
 
   return (
-    <Layout activeView={activeView} setActiveView={handleNavigate}>
+    <Layout activeView={activeView} setActiveView={handleNavigate} userProfile={userProfile}>
       {renderActiveView()}
       <SettingsModal />
     </Layout>

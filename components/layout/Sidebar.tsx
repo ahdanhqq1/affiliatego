@@ -15,6 +15,7 @@ interface SidebarProps {
   setActiveView: (view: View) => void;
   isMobileOpen: boolean;
   onMobileClose: () => void;
+  userProfile?: any;
 }
 
 const NavItem: React.FC<{
@@ -45,7 +46,7 @@ const NavItem: React.FC<{
   );
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isMobileOpen, onMobileClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isMobileOpen, onMobileClose, userProfile }) => {
     const { t } = useLanguage();
     const { setIsSettingsOpen } = useSettings();
 
@@ -65,6 +66,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isM
           { id: 'featureGuide', label: "Panduan Fitur", icon: <Info /> },
         ]
       },
+      ...(userProfile?.role === 'admin' ? [{
+        title: "Admin",
+        items: [
+          { id: 'adminPanel', label: "Admin Panel", icon: <ShieldCheck /> },
+        ]
+      }] : []),
       {
         title: "Photoshoot",
         items: [
