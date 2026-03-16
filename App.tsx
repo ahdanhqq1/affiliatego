@@ -1,10 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { UsageProvider } from './contexts/UsageContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { Layout } from './components/layout/Layout';
 import { SettingsModal } from './components/SettingsModal';
+import { Login } from './components/Login';
+import { auth, onAuthStateChanged, User, db } from './firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { VirtualTryOn } from './pages/VirtualTryOn';
 import HomePage from './pages/HomePage';
 import GoAesthetic from './pages/GoAesthetic';
@@ -22,10 +25,49 @@ export type View = 'home' | 'featureGuide' | 'virtualTryOn' | 'goAesthetic' | 'g
 function AppContent() {
   const { t } = useLanguage();
   const [activeView, setActiveView] = useState<View>('home');
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Save user profile to Firestore
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            lastLogin: serverTimestamp(),
+            createdAt: serverTimestamp()
+          }, { merge: true });
+        } catch (error) {
+          console.error('Error saving user profile:', error);
+        }
+      }
+      setUser(user);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleNavigate = (view: View) => {
     setActiveView(view);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-cartoon-yellow flex items-center justify-center">
+        <div className="animate-bounce text-4xl font-black uppercase italic tracking-tighter text-cartoon-dark">
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
 
   const renderActiveView = () => {
       switch (activeView) {

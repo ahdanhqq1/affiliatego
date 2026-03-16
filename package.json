@@ -10,10 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.1.1",
-    "react-dom": "^19.2.1",
     "@google/genai": "^1.20.0",
-    "framer-motion": "^12.23.25"
+    "firebase": "^12.10.0",
+    "framer-motion": "^12.23.25",
+    "react": "^19.1.1",
+    "react-dom": "^19.2.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

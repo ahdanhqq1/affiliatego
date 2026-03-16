@@ -14,7 +14,10 @@ export const SettingsModal: React.FC = () => {
 
   if (!isSettingsOpen) return null;
 
+  const isForced = !apiKey;
+
   const handleSave = () => {
+    if (!tempKey.trim()) return;
     setApiKey(tempKey);
     setShowSaved(true);
     setTimeout(() => {
@@ -31,17 +34,29 @@ export const SettingsModal: React.FC = () => {
             <div className="bg-white p-2 rounded-xl border-2 border-cartoon-dark shadow-cartoon">
               <ShieldCheck className="w-6 h-6 text-cartoon-dark" />
             </div>
-            <h2 className="text-2xl font-black uppercase italic tracking-tight">API Settings</h2>
+            <h2 className="text-2xl font-black uppercase italic tracking-tight">
+              {isForced ? 'Setup API Key' : 'API Settings'}
+            </h2>
           </div>
-          <button 
-            onClick={() => setIsSettingsOpen(false)}
-            className="p-2 hover:bg-white/50 rounded-full transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          {!isForced && (
+            <button 
+              onClick={() => setIsSettingsOpen(false)}
+              className="p-2 hover:bg-white/50 rounded-full transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          )}
         </div>
 
         <div className="p-8 space-y-6">
+          {isForced && (
+            <div className="bg-cartoon-blue/10 p-4 border-2 border-cartoon-blue rounded-2xl">
+              <p className="text-sm font-bold text-cartoon-blue leading-relaxed">
+                Selamat datang! Masukkan Gemini API Key Anda untuk mulai menggunakan fitur AI di aplikasi ini.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-4">
             <label className="block text-sm font-black uppercase tracking-wider text-slate-500 ml-1">
               Gemini API Key

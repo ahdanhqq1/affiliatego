@@ -5,7 +5,8 @@ import { TryOnIcon } from '../icons/TryOnIcon';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { SparklesIcon } from '../icons/SparklesIcon';
-import { X, Users, Smile, ShieldCheck, Eraser, ScanFace, Monitor, Info, Settings } from '../icons/LucideIcons';
+import { auth, signOut } from '../../firebase';
+import { X, Users, Smile, ShieldCheck, Eraser, ScanFace, Monitor, Info, Settings, LogOut } from '../icons/LucideIcons';
 import { HomeIcon } from '../icons/HomeIcon';
 import { MirrorIcon } from '../icons/MirrorIcon';
 
@@ -47,6 +48,14 @@ const NavItem: React.FC<{
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isMobileOpen, onMobileClose }) => {
     const { t } = useLanguage();
     const { setIsSettingsOpen } = useSettings();
+
+    const handleLogout = async () => {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    };
     
     const menuGroups = [
       {
@@ -112,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isM
                         </div>
                     ))}
                     
-                    <div className="mt-auto pt-4 border-t-2 border-slate-200">
+                    <div className="mt-auto pt-4 border-t-2 border-slate-200 space-y-2">
                       <NavItem
                         icon={<Settings />}
                         label="API Settings"
@@ -121,6 +130,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isM
                           setIsSettingsOpen(true);
                           onMobileClose();
                         }}
+                        variant="settings"
+                      />
+                      <NavItem
+                        icon={<LogOut />}
+                        label="Logout"
+                        isActive={false}
+                        onClick={handleLogout}
                         variant="settings"
                       />
                     </div>
